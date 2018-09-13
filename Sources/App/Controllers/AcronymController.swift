@@ -13,6 +13,9 @@ struct AcronymController: RouteCollection {
         acronymRoutes.get("first", use: searchHandler)
         acronymRoutes.get("sorted", use: sortedHandler)
         acronymRoutes.get(Acronym.parameter, "user", use: getUserHandler)
+        acronymRoutes.post(Acronym.parameter, "categories", Category.parameter, use: addCategoryHandler)
+        acronymRoutes.get(Acronym.parameter, "categories", use: getCategoriesHandler)
+        acronymRoutes.delete(Acronym.parameter, "categories", Category.parameter, use: removeCategoriesHandler)
     }
     
     func getAllHandler(_ req: Request) -> Future<[Acronym]> {
@@ -68,10 +71,37 @@ struct AcronymController: RouteCollection {
         return Acronym.query(on: req).sort(\.short, .ascending).all()
     }
     
+}
+
+// MARK - Acronym & User
+extension AcronymController {
     func getUserHandler(_ req: Request) throws -> Future<User> {
         return try req.parameters.next(Acronym.self)
             .flatMap(to: User.self) { acronym in
                 acronym.user.get(on: req)
-            }
+        }
+    }
+}
+
+// MARK - Acronym & Category
+extension AcronymController {
+    func addCategoryHandler(_ req: Request) throws -> Future<HTTPStatus> {
+        return try flatMap(to: HTTPStatus.self, req.parameters.next(Acronym.self), req.parameters.next(Category.self))
+        { acronym, category in
+            acronym.categories.attach(category, on: req).transform(to: .created)
+        }
+    }
+    
+    func getCategoriesHandler(_ req: Request) throws -> Future<[Category]> {
+        return try req.parameters.next(Acronym.self).flatMap(to: [Category].self) { acronym in
+            try acronym.categories.query(on: req).all()
+        }
+    }
+    
+    func removeCategoriesHandler(_ req: Request) throws -> Future<HTTPStatus> {
+        return try flatMap(to: HTTPStatus.self, req.parameters.next(Acronym.self), req.parameters.next(Category.self))
+        { acronym, category  in
+            return acronym.categories.detach(category, on: req).transform(to: .noContent)
+        }
     }
 }
