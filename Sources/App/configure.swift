@@ -17,13 +17,32 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     middlewares.use(ErrorMiddleware.self) // Catches errors and converts to HTTP response
     services.register(middlewares)
 
-    // Configure a Postgrss database
+    // Configure a database
     var databases = DatabasesConfig()
+    let hostname = Environment.get("DATABASE_HOSTNAME") ?? "localhost"
+    let username = Environment.get("DATABASE_USER") ?? "vapor"
+    
+    let databaseName: String
+    let databasePort: Int
+    if (env == .testing) {
+        databaseName = "vapor-test"
+        if let testPort = Environment.get("DATABASE_PORT") {
+            databasePort = Int(testPort) ?? 5433
+        } else {
+            databasePort = 5433
+        }
+    }
+    else {
+        databaseName = Environment.get("DATABASE_DB") ?? "vapor"
+        databasePort = 5432
+    }
+    let password = Environment.get("DATABASE_PASSWORD") ?? "password"
     let databaseConfig = PostgreSQLDatabaseConfig(
-        hostname: "localhost",
-        username: "vapor",
-        database: "vapor",
-        password: "vapor")
+        hostname: hostname,
+        port: databasePort,
+        username: username,
+        database: databaseName,
+        password: password)
     let database = PostgreSQLDatabase(config: databaseConfig)
     databases.add(database: database, as: .psql)
     services.register(databases)
@@ -35,5 +54,10 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     migrations.add(model: Category.self, database: .psql)
     migrations.add(model: AcronymCategoryPivot.self, database: .psql)
     services.register(migrations)
+    
+    var commandConfig = CommandConfig.default()
+    commandConfig.useFluentCommands()
+    services.register(commandConfig)
+
 
 }

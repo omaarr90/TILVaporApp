@@ -10,7 +10,7 @@ struct AcronymController: RouteCollection {
         acronymRoutes.put(Acronym.parameter, use: updateHanlder)
         acronymRoutes.delete(Acronym.parameter, use: deleteHandler)
         acronymRoutes.get("search", use: searchHandler)
-        acronymRoutes.get("first", use: searchHandler)
+        acronymRoutes.get("first", use: getFirstHanlder)
         acronymRoutes.get("sorted", use: sortedHandler)
         acronymRoutes.get(Acronym.parameter, "user", use: getUserHandler)
         acronymRoutes.post(Acronym.parameter, "categories", Category.parameter, use: addCategoryHandler)
