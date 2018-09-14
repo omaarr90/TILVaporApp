@@ -55,24 +55,20 @@ struct WebsiteController: RouteCollection {
     }
     
     func userHandler(_ req: Request) throws -> Future<View> {
-        // 2
         return try req.parameters.next(User.self)
             .flatMap(to: View.self) { user in
-                // 3
                 return try user.acronyms
                     .query(on: req)
                     .all()
                     .flatMap(to: View.self) { acronyms in
-                        // 4
-                        let context = UserContext(
-                            title: user.name,
-                            user: user,
-                            acronyms: acronyms)
+                        let context = UserContext(title: user.name,
+                                                  user: user,
+                                                  acronyms: acronyms)
                         return try req.view().render("user", context)
                 }
         }
     }
-    
+
     func allUsersHandler(_ req: Request) throws -> Future<View> {
         // 2
         return User.query(on: req)
